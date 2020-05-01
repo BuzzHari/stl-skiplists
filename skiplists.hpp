@@ -22,6 +22,33 @@ namespace skip_list {
                 max_levels = mlevels; 
                 head = new Node(max_levels, INT_MIN, INT_MIN);
             };
+
+/*
+ *            // Copy Constructor
+ *            Skip_list(const Skip_list& other_list) {
+ *                
+ *                copy_list(other_list, 0);
+ *                
+ *            }
+ *
+ *            // Copy Assignment
+ *            Skip_list& operator=(const Skip_list& other_list) {
+ *                copy_list(other_list, 1);
+ *            }
+ */
+
+            ~Skip_list() {
+                Node *ptr = head->forward[0];
+                Node *temp;
+                
+                while(ptr) {
+                    temp = ptr->forward[0];
+                    delete ptr;
+                    ptr = temp;
+                }
+                
+                delete head;
+            }
             
             // Iterators.
             class Iterator {
@@ -95,16 +122,18 @@ namespace skip_list {
             void print_list();
         private:        
             typedef struct Node {
+                int level;
                 key_type key;
                 value_type value;
                 struct Node **forward;
                 struct Node *prev; 
 
-                explicit Node(int level, const key_type& k, const value_type& v) {
+                explicit Node(int lvl, const key_type& k, const value_type& v) {
+                    level = lvl;
                     key = k;
                     value = v;
-                    forward = new Node*[level];
-                    for(int i = 0; i < level; i++)
+                    forward = new Node*[lvl];
+                    for(int i = 0; i < lvl; i++)
                         forward[i] = nullptr;
 
                     prev = nullptr;
@@ -118,6 +147,8 @@ namespace skip_list {
             int curr_levels;
             int max_levels;
             Node *head;
+
+            void copy_list(const Skip_list& other, int flag);
 
             int generate_level() {
                 // Using random_device for the initial seed.
@@ -255,11 +286,62 @@ namespace skip_list {
             ptr = head;
 
             while(ptr != nullptr) {
-                std::cout<<ptr->key<<" ";
+                if(ptr != head)
+                    std::cout<<ptr->key<<" ";
                 ptr = ptr->forward[i];
             }
             std::cout<<"\n";
         }
     }
+
+    // Copy list.
+/*
+ *    template<typename K, typename V>
+ *    void Skip_list<typename K, typename V>::copy_list(const Skip_list& other_list) {
+ *        
+ *        // From copy constructor, intialize the new list.
+ *        if(!flag) {
+ *            curr_levels = other_list.curr_levels;
+ *            max_levels = other_list.max_levels;
+ *            head = new Node(max_levels, INT_MIN, INT_MIN);
+ *
+ *        }
+ *        
+ *        Node *c_ptr = other_listr.head;
+ *        Node *ptr = head;
+ *        
+ *        int temp_index = 0;
+ *        while(c_ptr) {
+ *            int temp_level = c_ptr.level; 
+ *            temp_index = 0;
+ *            std::vector<std::pair<Node *cnode, int level>> temp;
+ *            // Pushing all the forward elements into a vector.
+ *            for(int i = 0; i <= other_list.curr_levels; ++i) {
+ *                if(c_ptr[i]) {
+ *                    if(c_ptr[i]->forward[i])
+ *                        temp.push(std::make_pair(c_ptr[i]->forward[i], c_ptr[i]->forward[i]->level);
+ *                    else
+ *                        temp.push(std::make_pair(nullptr, 0));
+ *                }
+ *            }
+ *
+ *            // Creating new nodes and inserting the poped elements.
+ *             
+ *            for(int i = 0; i < temp_level; ++i) {
+ *                if(temp[temp_index].first) {
+ *                    if(temp[temp_index])
+ *                    ptr->forward[i] = new Node(temp[temp_index].second,temp[temp_index].first.cnode->key, temp[temp_index].first.cnode->value);
+ *                    ptr->forward[i]->prev = ptr;
+ *                }
+ *                else {
+ *                    ptr->forward[i] = nullptr;
+ *                }
+ *                node_index+=1;
+ *            }
+ *            
+ *            c_ptr = c_ptr->forward[0];
+ *        }
+ *    }
+ */
 }
 #endif
