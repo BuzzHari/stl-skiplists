@@ -20,7 +20,7 @@ namespace skip_list {
                 
                 curr_levels = 0;
                 max_levels = mlevels; 
-                head = new Node(max_levels, INT_MIN, INT_MIN);
+                head = new Node(max_levels, INT_MIN );
             };
 
 /*
@@ -127,7 +127,17 @@ namespace skip_list {
                 value_type value;
                 struct Node **forward;
                 struct Node *prev; 
+    
+                explicit Node(int lvl, const key_type& k) {
+                    level = lvl;
+                    key = k;
+                    forward = new Node*[lvl];
+                    for(int i = 0; i < lvl; i++)
+                        forward[i] = nullptr;
 
+                    prev = nullptr;
+                }
+                
                 explicit Node(int lvl, const key_type& k, const value_type& v) {
                     level = lvl;
                     key = k;
@@ -189,8 +199,8 @@ namespace skip_list {
         }
 
         int gen_level = generate_level();
-        std::cout<<"List levels:" << curr_levels << std::endl;
-        std::cout<<"gen_level: " << gen_level<<"\n";
+       // std::cout<<"List levels:" << curr_levels << std::endl;
+       // std::cout<<"gen_level: " << gen_level<<"\n";
 
         if (gen_level > curr_levels + 1) {
             for(int i = curr_levels + 1; i < gen_level; ++i)
@@ -212,9 +222,9 @@ namespace skip_list {
                     ptr->forward[i]->prev = ptr;
             }
             
-            std::cout<<"Inserted value: "<<update[i]->forward[i]->key<<std::endl;
+           //std::cout<<"Inserted value: "<<update[i]->forward[i]->key<<std::endl;
         }
-        std::cout<<"Value Inserted\n";
+        //std::cout<<"Value Inserted\n";
     }
 
     // Delete.
