@@ -250,7 +250,7 @@ namespace skip_list {
                     break;
                 update[i]->forward[i] = ptr->forward[i];
 
-                if(i == 0) {
+                if(i == 0 && ptr->forward[i]) {
                     ptr->forward[i]->prev = update[i];
                 }
             }
