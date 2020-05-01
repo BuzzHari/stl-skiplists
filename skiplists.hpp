@@ -4,6 +4,7 @@
 #include <climits>
 #include <random>
 #include <iostream>
+#include <utility>
 
 namespace skip_list {
     
@@ -32,15 +33,14 @@ namespace skip_list {
                     {
                     };
                     
-                    // Comparing by key.
                     bool operator==(const Iterator& rhs) const {
                         return curr_it == rhs.curr_it;
                     }
                     bool operator!=(const Iterator& rhs) const {
                         return !(curr_it == rhs.curr_it);
                     }
-                    value_type& operator*() {
-                        return curr_it->value;
+                    std::pair<key_type, value_type> operator*() {
+                        return std::make_pair(curr_it->key,curr_it->value);
                     }
                     value_type* operator->() {
                         return &curr_it->value;
@@ -85,7 +85,7 @@ namespace skip_list {
             
             // The end ptr is always null. 
             Iterator end() {
-                return{ nullptr };
+                return Iterator{nullptr}; 
             }
 
 
@@ -109,6 +109,10 @@ namespace skip_list {
 
                     prev = nullptr;
                 }
+
+                ~Node() {
+                    delete[] forward;
+                }
             }Node;
 
             int curr_levels;
@@ -117,14 +121,14 @@ namespace skip_list {
 
             int generate_level() {
                 // Using random_device for the initial seed.
-                static std::random_device rd;
+                //static std::random_device rd;
                 // Using the engine based on mersenne-twister algo.
-                static std::mt19937 engine(rd());
+                static std::mt19937 engine(0);
                 // Will produce either 0 or 1 with near equal probability.
                 static std::uniform_int_distribution<> flip(0,1);
 
                 int level = 1;
-                while(flip(engine) && level <= max_levels)
+                while(flip(engine) && level < max_levels)
                     level+=1;
 
                 return level;
@@ -153,9 +157,10 @@ namespace skip_list {
             return;
         }
 
-        int gen_level= generate_level();
+        int gen_level = generate_level();
         std::cout<<"List levels:" << curr_levels << std::endl;
-        
+        std::cout<<"gen_level: " << gen_level<<"\n";
+
         if (gen_level > curr_levels + 1) {
             for(int i = curr_levels + 1; i < gen_level; ++i)
                 update[i] = head;
@@ -166,7 +171,16 @@ namespace skip_list {
 
         for(int i = 0; i < gen_level; ++i) {
             ptr->forward[i] = update[i]->forward[i];
+            
             update[i]->forward[i] = ptr;
+            
+            // Connect the prevs only for level 0.
+            if(i == 0) {
+                ptr->prev = update[i];
+                if(ptr->forward[i])
+                    ptr->forward[i]->prev = ptr;
+            }
+            
             std::cout<<"Inserted value: "<<update[i]->forward[i]->key<<std::endl;
         }
         std::cout<<"Value Inserted\n";
@@ -184,21 +198,29 @@ namespace skip_list {
                 ptr = ptr->forward[i];
             update[i] = ptr;
         }
-
+        
+        
         ptr = ptr->forward[0];
-
         if(ptr && ptr->key == key) {
-            for(int i = 0; i < curr_levels; ++i) {
+            // ptr now points to the node to be deleted.
+            for(int i = 0; i <= curr_levels; ++i) {
                 // making sure it's the ndoe before the node to be deleted.
                 if(update[i]->forward[i] != ptr)
                     break;
                 update[i]->forward[i] = ptr->forward[i];
+
+                if(i == 0) {
+                    ptr->forward[i]->prev = update[i];
+                }
             }
-            delete ptr;
+            
+            delete ptr;    
         }
         // Deleting the level if empty.
-        while(curr_levels > 0 && head->forward[curr_levels] == NULL)
-            --curr_levels;
+        while(curr_levels > 0 && head->forward[curr_levels] == nullptr) {
+            std::cout<<"In Here\n";
+            curr_levels-=1;
+        }
 
         std::cout<<"Delete Successfull\n";
     }
@@ -232,7 +254,7 @@ namespace skip_list {
             std::cout<<"Level "<<i<<":";
             ptr = head;
 
-            while(ptr) {
+            while(ptr != nullptr) {
                 std::cout<<ptr->key<<" ";
                 ptr = ptr->forward[i];
             }
