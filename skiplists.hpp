@@ -5,6 +5,7 @@
 #include <random>
 #include <iostream>
 #include <utility>
+#include <unordered_map>
 
 namespace skip_list {
     
@@ -23,21 +24,73 @@ namespace skip_list {
                 head = new Node(max_levels, INT_MIN );
             };
 
-/*
- *            // Copy Constructor
- *            Skip_list(const Skip_list& other_list) {
- *                
- *                copy_list(other_list, 0);
- *                
- *            }
- *
- *            // Copy Assignment
- *            Skip_list& operator=(const Skip_list& other_list) {
- *                copy_list(other_list, 1);
- *            }
- */
+            // Copy Constructor
+            Skip_list(const Skip_list& other_list) {
+                
+                copy_list(other_list);
+                
+            }
 
+            // Copy Assignment
+            Skip_list& operator=(const Skip_list& other_list) {
+                Node *c_ptr = other_list.head;
+                Node *ptr = head;
+                
+                // Starting from level zero.
+                // The current node->ptrnode.
+                std::unordered_map<Node *, Node *> hash_map;
+
+                while(c_ptr->forward[0]) {
+                    ptr->forward[0] = new Node(c_ptr->forward[0]->level, 
+                            c_ptr->forward[0]->key, c_ptr->forward[0]->value);
+                
+                    ptr->forward[0]->prev = ptr;
+
+                    hash_map[c_ptr->forward[0]] = ptr->forward[0];
+                    c_ptr = c_ptr->forward[0];
+                    ptr = ptr->forward[0];
+                }
+            
+                c_ptr = other_list.head->forward[0];
+                ptr = head->forward[0];
+                for (int i = 1; i <= curr_levels; ++i) 
+                    head->forward[i] = hash_map[other_list.head->forward[i]];
+                
+                while(c_ptr) {
+                    for(int i = 1; i < c_ptr->level; ++i) {
+                        ptr->forward[i] = hash_map[c_ptr->forward[i]];
+                    }
+                    c_ptr = c_ptr->forward[0];
+                    ptr = ptr->forward[0];
+                }
+
+                return *this;
+            }
+
+            // Move Constructor 
+            Skip_list(Skip_list&& other_list): 
+                curr_levels{other_list.curr_levels},
+                max_levels{other_list.max_levels},
+                head{other_list.head}
+            {
+                other_list.head = nullptr;
+            }
+
+            // Move Assignment
+            Skip_list& operator=(Skip_list&& other_list) {
+                
+                std::cout << "Move Constructor called\n";
+                curr_levels = other_list.curr_levels;
+                max_levels = other_list.max_levels;
+                head = other_list.head;
+
+                other_list.head = nullptr;
+
+                return *this;
+            }
             ~Skip_list() {
+                if(!head)
+                    return;
                 Node *ptr = head->forward[0];
                 Node *temp;
                 
@@ -158,7 +211,7 @@ namespace skip_list {
             int max_levels;
             Node *head;
 
-            void copy_list(const Skip_list& other, int flag);
+            void copy_list(const Skip_list& other);
 
             int generate_level() {
                 // Using random_device for the initial seed.
@@ -291,6 +344,11 @@ namespace skip_list {
     template<typename K, typename V> 
     void Skip_list<K, V>::print_list() {
         Node *ptr = head;
+        if(!ptr) {
+            std::cout<<"No such list exist\n";
+            return;
+        }
+            
         for(int i = curr_levels; i >= 0; --i) {
             std::cout<<"Level "<<i<<":";
             ptr = head;
@@ -305,53 +363,45 @@ namespace skip_list {
     }
 
     // Copy list.
-/*
- *    template<typename K, typename V>
- *    void Skip_list<typename K, typename V>::copy_list(const Skip_list& other_list) {
- *        
- *        // From copy constructor, intialize the new list.
- *        if(!flag) {
- *            curr_levels = other_list.curr_levels;
- *            max_levels = other_list.max_levels;
- *            head = new Node(max_levels, INT_MIN, INT_MIN);
- *
- *        }
- *        
- *        Node *c_ptr = other_listr.head;
- *        Node *ptr = head;
- *        
- *        int temp_index = 0;
- *        while(c_ptr) {
- *            int temp_level = c_ptr.level; 
- *            temp_index = 0;
- *            std::vector<std::pair<Node *cnode, int level>> temp;
- *            // Pushing all the forward elements into a vector.
- *            for(int i = 0; i <= other_list.curr_levels; ++i) {
- *                if(c_ptr[i]) {
- *                    if(c_ptr[i]->forward[i])
- *                        temp.push(std::make_pair(c_ptr[i]->forward[i], c_ptr[i]->forward[i]->level);
- *                    else
- *                        temp.push(std::make_pair(nullptr, 0));
- *                }
- *            }
- *
- *            // Creating new nodes and inserting the poped elements.
- *             
- *            for(int i = 0; i < temp_level; ++i) {
- *                if(temp[temp_index].first) {
- *                    if(temp[temp_index])
- *                    ptr->forward[i] = new Node(temp[temp_index].second,temp[temp_index].first.cnode->key, temp[temp_index].first.cnode->value);
- *                    ptr->forward[i]->prev = ptr;
- *                }
- *                else {
- *                    ptr->forward[i] = nullptr;
- *                }
- *                node_index+=1;
- *            }
- *            
- *            c_ptr = c_ptr->forward[0];
- *        }
- *    }
- */
+    template<typename K, typename V>
+    void Skip_list<K, V>::copy_list(const Skip_list& other_list) {
+        
+        // From copy constructor, intialize the new list.
+        curr_levels = other_list.curr_levels;
+        max_levels = other_list.max_levels;
+        head = new Node(max_levels, INT_MIN) ;
+
+        
+        Node *c_ptr = other_list.head;
+        Node *ptr = head;
+        
+        // Starting from level zero.
+        // The current node->ptrnode.
+        std::unordered_map<Node *, Node *> hash_map;
+
+        while(c_ptr->forward[0]) {
+            ptr->forward[0] = new Node(c_ptr->forward[0]->level, 
+                    c_ptr->forward[0]->key, c_ptr->forward[0]->value);
+        
+            ptr->forward[0]->prev = ptr;
+
+            hash_map[c_ptr->forward[0]] = ptr->forward[0];
+            c_ptr = c_ptr->forward[0];
+            ptr = ptr->forward[0];
+        }
+    
+        c_ptr = other_list.head->forward[0];
+        ptr = head->forward[0];
+        for (int i = 1; i <= curr_levels; ++i) 
+            head->forward[i] = hash_map[other_list.head->forward[i]];
+        
+        while(c_ptr) {
+            for(int i = 1; i < c_ptr->level; ++i) {
+                ptr->forward[i] = hash_map[c_ptr->forward[i]];
+            }
+            c_ptr = c_ptr->forward[0];
+            ptr = ptr->forward[0];
+        }
+    }
 }
 #endif
